@@ -9,6 +9,7 @@ public sealed class ProjectSetupMenu(SettingsStore store, AgentProviderRegistry 
 {
     public void Run()
     {
+        var resumeIndex = 0;
         while (true)
         {
             var settings = store.Load();
@@ -53,7 +54,9 @@ public sealed class ProjectSetupMenu(SettingsStore store, AgentProviderRegistry 
             };
 
             Screen.Header(projectName, "Setup");
-            var sel = Menu.Prompt($"Configure {Markup.Escape(projectName)}:", items);
+            var result = Menu.PromptWithKeys($"Configure {Markup.Escape(projectName)}:", items, customKeys: null, initialIndex: resumeIndex);
+            resumeIndex = result.Index;
+            var sel = result.Selected;
             if (sel is null) return;
 
             switch (sel.Tag)

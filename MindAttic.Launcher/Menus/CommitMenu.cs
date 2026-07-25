@@ -9,6 +9,7 @@ public sealed class CommitMenu(SettingsStore store, GitService git)
 {
     public void Run()
     {
+        var resumeIndex = 0;
         while (true)
         {
             var sortedProjects = ProjectRoster.Sorted(store.Load());
@@ -28,7 +29,9 @@ public sealed class CommitMenu(SettingsStore store, GitService git)
                 items.Add(new MenuItem { Name = p.Name, Description = statuses[p.Name], Tag = p });
 
             Screen.Header("Commit and sync");
-            var sel = Menu.Prompt("Choose a project to commit:", items);
+            var result = Menu.PromptWithKeys("Choose a project to commit:", items, customKeys: null, initialIndex: resumeIndex);
+            resumeIndex = result.Index;
+            var sel = result.Selected;
             if (sel is null) return;
 
             if (Equals(sel.Tag, "all"))

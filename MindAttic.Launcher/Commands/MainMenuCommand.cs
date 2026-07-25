@@ -51,6 +51,7 @@ public sealed class MainMenuCommand : AsyncCommand<MainMenuCommand.Settings>
             new() { Name = "Exit",                          Description = "close this menu (other tabs are untouched)", Tag = "exit" }
         };
 
+        var resumeIndex = 0;
         while (true)
         {
             Screen.Header();
@@ -65,8 +66,10 @@ public sealed class MainMenuCommand : AsyncCommand<MainMenuCommand.Settings>
                 items,
                 customKeys: null,
                 allowBack: false,
-                refreshToken: refreshCts.Token);
+                refreshToken: refreshCts.Token,
+                initialIndex: resumeIndex);
 
+            resumeIndex = result.Index;
             if (result.Timeout) continue;
             if (result.Selected is null) return Task.FromResult(0);
 

@@ -11,6 +11,7 @@ public sealed class OpenProjectMenu(SettingsStore store, AgentProviderRegistry p
 
     public void Run()
     {
+        var resumeIndex = 0;
         while (true)
         {
             var settings = store.Load();
@@ -46,7 +47,10 @@ public sealed class OpenProjectMenu(SettingsStore store, AgentProviderRegistry p
                 "Choose a project to open:",
                 items,
                 CustomKeys,
-                extraHint: "[green]P[/][grey50] cycle provider[/]");
+                extraHint: "[green]P[/][grey50] cycle provider[/]",
+                initialIndex: resumeIndex);
+
+            resumeIndex = result.Index;
 
             if (result.Back) return;
 

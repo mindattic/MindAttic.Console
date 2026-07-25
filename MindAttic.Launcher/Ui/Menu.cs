@@ -28,7 +28,8 @@ public static class Menu
         IReadOnlySet<ConsoleKey>? customKeys,
         bool allowBack = true,
         string? extraHint = null,
-        CancellationToken refreshToken = default)
+        CancellationToken refreshToken = default,
+        int initialIndex = 0)
     {
         var rows = new List<MenuItem>(items);
         if (allowBack)
@@ -44,7 +45,7 @@ public static class Menu
         if (rows.Count == 0) return new MenuResult { Back = true };
 
         var nameWidth = rows.Max(i => i.Name.Length);
-        var index = 0;
+        var index = Math.Clamp(initialIndex, 0, rows.Count - 1);
         // CursorTop throws on redirected stdout; fall back to 0 so the re-render
         // path still works (it just overwrites from the top of the stream).
         var startTop = 0;
@@ -76,7 +77,7 @@ public static class Menu
                     }
                     else if (refreshToken.IsCancellationRequested)
                     {
-                        return new MenuResult { Timeout = true };
+                        return new MenuResult { Timeout = true, Index = index };
                     }
                     else
                     {
@@ -110,18 +111,18 @@ public static class Menu
                     {
                         var chosen = rows[index];
                         if (ReferenceEquals(chosen.Tag, MenuSentinel.Back))
-                            return new MenuResult { Back = true };
-                        return new MenuResult { Selected = chosen };
+                            return new MenuResult { Back = true, Index = index };
+                        return new MenuResult { Selected = chosen, Index = index };
                     }
                     case ConsoleKey.Escape:
                         if (!allowBack) break;
-                        return new MenuResult { Back = true };
+                        return new MenuResult { Back = true, Index = index };
                     default:
                         if (customKeys is not null && customKeys.Contains(keyInfo.Key))
                         {
                             var target = rows[index];
                             if (!ReferenceEquals(target.Tag, MenuSentinel.Back))
-                                return new MenuResult { CustomKey = keyInfo.Key, KeyTarget = target };
+                                return new MenuResult { CustomKey = keyInfo.Key, KeyTarget = target, Index = index };
                         }
                         break;
                 }
@@ -177,6 +178,7 @@ public sealed class MenuResult
     public bool Timeout { get; init; }
     public ConsoleKey? CustomKey { get; init; }
     public MenuItem? KeyTarget { get; init; }
+    public int Index { get; init; }
 }
 
 /// <summary>Marker tags for menu sentinels (Back, etc.).</summary>

@@ -13,6 +13,7 @@ public sealed class ProjectActionMenu(
 {
     public void Run()
     {
+        var resumeIndex = 0;
         while (true)
         {
             var settings = store.Load();
@@ -28,7 +29,9 @@ public sealed class ProjectActionMenu(
             };
 
             Screen.Header(current.Name);
-            var sel = Menu.Prompt($"Choose an action for {Markup.Escape(current.Name)}:", items);
+            var result = Menu.PromptWithKeys($"Choose an action for {Markup.Escape(current.Name)}:", items, customKeys: null, initialIndex: resumeIndex);
+            resumeIndex = result.Index;
+            var sel = result.Selected;
             if (sel is null) return;
 
             switch (sel.Tag)

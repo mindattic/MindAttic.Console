@@ -9,6 +9,7 @@ public sealed class PullMenu(SettingsStore store, GitService git)
 {
     public void Run()
     {
+        var resumeIndex = 0;
         while (true)
         {
             var sortedProjects = ProjectRoster.Sorted(store.Load());
@@ -27,7 +28,9 @@ public sealed class PullMenu(SettingsStore store, GitService git)
                 items.Add(new MenuItem { Name = p.Name, Description = statuses[p.Name], Tag = p });
 
             Screen.Header("Pull");
-            var sel = Menu.Prompt("Choose a project to pull:", items);
+            var result = Menu.PromptWithKeys("Choose a project to pull:", items, customKeys: null, initialIndex: resumeIndex);
+            resumeIndex = result.Index;
+            var sel = result.Selected;
             if (sel is null) return;
 
             if (Equals(sel.Tag, "all"))
