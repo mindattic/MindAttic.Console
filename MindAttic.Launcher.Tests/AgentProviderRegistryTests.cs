@@ -23,16 +23,10 @@ public sealed class AgentProviderRegistryTests
 
         store.Save(new AppSettings
         {
-            Provider = "Claude",
             AgentProviders =
             {
                 new AgentProvider { Key = "Claude", Name = "Claude Code",  RunCommand = "claude --dangerously-skip-permissions" },
                 new AgentProvider { Key = "Codex",  Name = "OpenAI Codex", RunCommand = "codex --dangerously-bypass-approvals-and-sandbox" }
-            },
-            Projects =
-            {
-                new Project { Name = "Alpha", Path = "C:\\a", Provider = "Codex" },
-                new Project { Name = "Beta",  Path = "C:\\b" }
             }
         });
     }
@@ -47,56 +41,24 @@ public sealed class AgentProviderRegistryTests
     public void Defaults_are_returned_when_AgentProviders_is_empty()
     {
         store.Save(new AppSettings());
-        Assert.That(new AgentProviderRegistry(store).All(), Has.Count.EqualTo(2));
+        Assert.That(new AgentProviderRegistry(store).All(), Has.Count.EqualTo(AgentProviderRegistry.Defaults.Count));
     }
 
     [Test]
-    public void EffectiveProvider_uses_project_override_when_set()
+    public void Defaults_order_is_Claude_Codex_Gemini_Kimi()
     {
-        var p = ProjectRoster.FindByName(store.Load(), "Alpha")!;
-        Assert.That(registry.EffectiveProvider(p).Key, Is.EqualTo("Codex"));
+        // Claude always sorts first, then Codex, Gemini, Kimi — this order drives
+        // both the fallback provider (Current()) and the ephemeral picker shown
+        // when a project tab is opened (OpenProjectMenu).
+        var keys = AgentProviderRegistry.Defaults.Select(p => p.Key).ToList();
+        Assert.That(keys, Is.EqualTo(new[] { "Claude", "Codex", "Gemini", "Kimi" }));
     }
 
     [Test]
-    public void EffectiveProvider_falls_back_to_default_when_project_unset()
+    public void Current_is_the_first_configured_provider()
     {
-        var p = ProjectRoster.FindByName(store.Load(), "Beta")!;
-        Assert.That(registry.EffectiveProvider(p).Key, Is.EqualTo("Claude"));
-    }
-
-    [Test]
-    public void Next_cycles_through_providers()
-    {
-        Assert.That(registry.Next("Claude").Key, Is.EqualTo("Codex"));
-        Assert.That(registry.Next("Codex").Key, Is.EqualTo("Claude"));
-    }
-
-    [Test]
-    public void Next_unknown_key_throws()
-    {
-        Assert.Throws<ArgumentException>(() => registry.Next("Bogus"));
-    }
-
-    [Test]
-    public void SetDefault_persists_through_store_round_trip()
-    {
-        registry.SetDefault("Codex");
-        Assert.That(new AgentProviderRegistry(store).CurrentDefaultKey(), Is.EqualTo("Codex"));
-    }
-
-    [Test]
-    public void SetProjectProvider_null_clears_override()
-    {
-        registry.SetProjectProvider("Alpha", null);
-        var p = ProjectRoster.FindByName(store.Load(), "Alpha")!;
-        Assert.That(p.Provider, Is.Null);
-        Assert.That(registry.EffectiveProvider(p).Key, Is.EqualTo("Claude"));
-    }
-
-    [Test]
-    public void SetProjectProvider_unknown_key_throws()
-    {
-        Assert.Throws<ArgumentException>(() => registry.SetProjectProvider("Alpha", "Bogus"));
+        Assert.That(registry.Current().Key, Is.EqualTo("Claude"));
+        Assert.That(registry.CurrentDefaultKey(), Is.EqualTo("Claude"));
     }
 
     [Test]

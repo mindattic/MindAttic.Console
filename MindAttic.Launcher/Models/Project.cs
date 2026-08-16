@@ -22,7 +22,6 @@ public sealed class Project
     public string? TabAlias { get; set; }
     public string? TabColor { get; set; }
     public string? ColorScheme { get; set; }
-    public string? Provider { get; set; }
 
     /// <summary>
     /// SQL Server instance hosting this project's databases (e.g. <c>localhost</c>,

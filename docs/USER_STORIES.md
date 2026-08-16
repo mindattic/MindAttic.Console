@@ -13,28 +13,34 @@ updated: 2026-06-07
 
 ## Epic A — Launch agents in tabs
 - **MCO-US-A1 ✅** As a Dev, I can run `mindattic host --name <Project> [--provider <Key>]` to root
-  the configured agent in the right repo, so I get a working session in one step. *Given a roster
-  with the project; When I host it; Then the project's path and effective provider are resolved.*
-  *(verified by `EffectiveProvider_uses_project_override_when_set`,
-  `EffectiveProvider_falls_back_to_default_when_project_unset`,
-  `Defaults_are_returned_when_AgentProviders_is_empty`.)*
+  an agent in the right repo; without `--provider` it resolves to the first-listed provider (Claude),
+  so I get a working session in one step even from a script. *Given a roster with the project; When I
+  host it with no explicit provider; Then the project's path and the first-listed provider are
+  resolved.* *(verified by `Defaults_are_returned_when_AgentProviders_is_empty`,
+  `Current_is_the_first_configured_provider`.)*
 - **MCO-US-A2 🟡** As a Dev, when I reference a provider that doesn't exist, the operation fails
   loudly rather than launching a default, so a typo never starts the wrong agent. *Given an unknown
-  provider key; When cycling or setting an override; Then it throws.* *(registry rejection verified
-  by `Next_unknown_key_throws`, `SetProjectProvider_unknown_key_throws`; the `HostAgentCommand`
-  `--provider` exit-code path itself is not yet covered.)*
-- **MCO-US-A3 ✅** As a Dev, I can cycle the default provider so I can switch the whole workspace
-  between Claude and Codex. *Given multiple providers; When I pick Next; Then it advances and wraps.*
-  *(verified by `Next_cycles_through_providers`.)*
+  provider key; When resolving it; Then the caller gets nothing back to fall through to a loud
+  error.* *(registry rejection verified by `SetModel_unknown_key_throws`; the `HostAgentCommand`
+  `--provider` exit-code path itself — [MCO-LAW-1](BIBLE.md#MCO-LAW-1) — is not yet covered by an
+  automated test.)*
+- **MCO-US-A3 🟡** As a Dev, opening a project tab asks fresh which agent CLI to launch it with —
+  Claude first, then Codex, Gemini, Kimi — every single time, so nothing about "which CLI for this
+  project" is ever saved and I can open the same project with a different CLI on a whim. *Given the
+  Open Project Tab menu; When I pick a project; Then a picker over all configured providers appears,
+  ordered Claude/Codex/Gemini/Kimi, and the launch uses whichever one I pick without persisting it.*
+  *(the ordering contract is verified by `Defaults_order_is_Claude_Codex_Gemini_Kimi`; the menu-level
+  picker itself — `OpenProjectMenu.PickProvider` — is exercised only interactively, no UI test
+  harness exists yet.)*
 - **MCO-US-A4 ✅** As a Dev, a provider `RunCommand` with quoted/spaced arguments is split into argv
   correctly before exec. *Given a quoted command line; When split; Then quotes and escaped quotes
   are preserved.* *(verified by `Preserves_quoted_arg_with_spaces`,
   `Preserves_escaped_quote_inside_quoted_arg`, `Splits_unquoted_args`,
   `Empty_input_returns_empty_array`.)*
 - **MCO-US-A5 🟡** As a Dev, I can open a project tab from the interactive menu (title + color +
-  scheme via `wt`). *WT command-line composition is covered, but the menu-driven open flow itself is
-  exercised only interactively.* *(launcher partly verified by `WindowsTerminalLauncherTests`; menu
-  path unverified.)*
+  scheme via `wt`) after picking the agent CLI for this launch. *WT command-line composition is
+  covered, but the menu-driven open flow itself is exercised only interactively.* *(launcher partly
+  verified by `WindowsTerminalLauncherTests`; menu path unverified.)*
 - **MCO-US-A6 ✅** As a Dev, I can set the model each agent CLI runs with — or revert to the CLI's
   own default — from the Settings screen, so I can switch Claude/Codex models without retyping the
   whole `RunCommand`. *Given a provider's RunCommand; When I set a model; Then the `--model` token is

@@ -17,10 +17,10 @@ public static class Menu
 
     /// <summary>
     /// Like <see cref="Prompt"/>, but also surfaces a configured set of "custom"
-    /// keys (e.g. P to cycle provider on the project list). When a custom key is
-    /// pressed the prompt exits with <see cref="MenuResult.CustomKey"/> set and
-    /// <see cref="MenuResult.KeyTarget"/> pointing at the highlighted item, so
-    /// the caller can react and re-enter the loop with fresh items.
+    /// keys (e.g. S/N to skip color prompts during project discovery). When a
+    /// custom key is pressed the prompt exits with <see cref="MenuResult.CustomKey"/>
+    /// set and <see cref="MenuResult.KeyTarget"/> pointing at the highlighted item,
+    /// so the caller can react and re-enter the loop with fresh items.
     /// </summary>
     public static MenuResult PromptWithKeys(
         string title,

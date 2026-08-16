@@ -7,9 +7,9 @@ namespace MindAttic.Launcher.Menus;
 
 public sealed class ProjectActionMenu(
     SettingsStore store,
-    AgentProviderRegistry providers,
     WindowsTerminalLauncher wt,
-    Project project)
+    Project project,
+    AgentProvider provider)
 {
     public void Run()
     {
@@ -18,7 +18,6 @@ public sealed class ProjectActionMenu(
         {
             var settings = store.Load();
             var current = ProjectRoster.FindByName(settings, project.Name) ?? project;
-            var provider = providers.EffectiveProvider(current);
 
             var hasCmd = !string.IsNullOrWhiteSpace(current.RunCommand);
             var items = new List<MenuItem>
@@ -68,7 +67,7 @@ public sealed class ProjectActionMenu(
                     return;
 
                 case "setup":
-                    new ProjectSetupMenu(store, providers, current.Name).Run();
+                    new ProjectSetupMenu(store, current.Name).Run();
                     break;
             }
         }

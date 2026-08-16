@@ -7,8 +7,6 @@ namespace MindAttic.Launcher.Menus;
 
 public sealed class OpenProjectMenu(SettingsStore store, AgentProviderRegistry providers, WindowsTerminalLauncher wt)
 {
-    private static readonly IReadOnlySet<ConsoleKey> CustomKeys = new HashSet<ConsoleKey> { ConsoleKey.P };
-
     public void Run()
     {
         var resumeIndex = 0;
@@ -32,7 +30,7 @@ public sealed class OpenProjectMenu(SettingsStore store, AgentProviderRegistry p
             items.AddRange(sortedProjects.Select(p => new MenuItem
             {
                 Name = p.Name,
-                Description = DescribeProject(p, providers),
+                Description = p.Description ?? "",
                 Tag = p
             }));
 
@@ -46,8 +44,7 @@ public sealed class OpenProjectMenu(SettingsStore store, AgentProviderRegistry p
             var result = Menu.PromptWithKeys(
                 "Choose a project to open:",
                 items,
-                CustomKeys,
-                extraHint: "[green]P[/][grey50] cycle provider[/]",
+                customKeys: null,
                 initialIndex: resumeIndex);
 
             resumeIndex = result.Index;
@@ -63,24 +60,30 @@ public sealed class OpenProjectMenu(SettingsStore store, AgentProviderRegistry p
                 }
 
                 var project = (Project)sel.Tag!;
-                new ProjectActionMenu(store, providers, wt, project).Run();
-                continue;
-            }
+                // Provider is an ephemeral, per-launch choice — nothing is
+                // persisted. Esc/Back from the picker just returns here.
+                var provider = PickProvider(project);
+                if (provider is null) continue;
 
-            if (result.CustomKey == ConsoleKey.P && result.KeyTarget?.Tag is Project target)
-            {
-                var current = providers.EffectiveProviderKey(target);
-                var next = providers.Next(current);
-                providers.SetProjectProvider(target.Name, next.Key);
-                // Outer loop rebuilds items so the new provider shows in the description.
+                new ProjectActionMenu(store, wt, project, provider).Run();
+                continue;
             }
         }
     }
 
-    private static string DescribeProject(Project p, AgentProviderRegistry providers)
+    /// <summary>
+    /// Which CLI to launch this project with, decided fresh every time — Claude
+    /// always sorts first (see <see cref="AgentProviderRegistry.Defaults"/>),
+    /// then Codex, then Gemini, then Kimi.
+    /// </summary>
+    private AgentProvider? PickProvider(Project project)
     {
-        var providerKey = providers.EffectiveProviderKey(p);
-        var providerLabel = string.IsNullOrWhiteSpace(p.Provider) ? $"default: {providerKey}" : providerKey;
-        return string.IsNullOrWhiteSpace(p.Description) ? providerLabel : $"{providerLabel} - {p.Description}";
+        var items = providers.All()
+            .Select(p => new MenuItem { Name = p.Name, Description = p.RunCommand, Tag = p })
+            .ToList();
+
+        Screen.Header("Open Project Tab", project.Name);
+        var sel = Menu.Prompt($"Open {Markup.Escape(project.Name)} with which agent?", items);
+        return sel?.Tag as AgentProvider;
     }
 }

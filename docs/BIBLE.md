@@ -18,8 +18,9 @@ menu plus a small set of CLI sub-commands that spawn per-project agent tabs in W
 commit/push repos, and back the workspace up.
 
 ## 2. The product promise {#MCO-§2}
-- One keystroke from the workspace root to a working agent session in a titled, colored Windows
-  Terminal tab rooted at the right repo, running the configured provider (Claude/Codex/…).
+- Pick a project, then pick an agent CLI (Claude/Codex/Gemini/Kimi) — a working agent session opens
+  in a titled, colored Windows Terminal tab rooted at the right repo. The provider choice is
+  per-launch, not saved: nothing about "which CLI for this project" is persisted anywhere.
 - One menu (or `mindattic commit`) to commit + push one or every MindAttic project, with an
   auto-generated message when none is supplied.
 - A real backup: a robocopy snapshot of `D:\Projects\MindAttic` plus full `sqlcmd` SQL Server
@@ -74,20 +75,23 @@ call stateless/injectable services; the services own all external-process and fi
 - `scripts/publish.ps1`, `scripts/ensure-fresh.ps1`, `scripts/restart.ps1` — publish/refresh tooling.
 
 ### 4.2 Domain model — NOUNS (`MindAttic.Launcher/Models/`)
-- **Project** (`Models/Project.cs`) — a managed repo: `Name`, `Path`, `RepoUrl`, provider override,
-  tab alias/color/scheme, `SqlServer` + `Databases`, `[JsonExtensionData] Extra`. `TabTitle` strips
-  the shared `MindAttic.` prefix.
+- **Project** (`Models/Project.cs`) — a managed repo: `Name`, `Path`, `RepoUrl`, tab alias/color/scheme,
+  `SqlServer` + `Databases`, `[JsonExtensionData] Extra`. `TabTitle` strips the shared `MindAttic.`
+  prefix. Carries no provider — which CLI to launch with is chosen at Open-Project-Tab time, not
+  stored per project.
 - **AgentProvider** (`Models/AgentProvider.cs`) — a launchable agent: `Key`, `Name`, `RunCommand`,
   `Extra`.
-- **AppSettings** (`Models/AppSettings.cs`) — the persisted root: default `Provider`, WT settings
-  path, `AgentProviders`, `Projects`, `DiscoveryIgnore`, `Extra`.
+- **AppSettings** (`Models/AppSettings.cs`) — the persisted root: WT settings path, `AgentProviders`,
+  `Projects`, `DiscoveryIgnore`, `Extra`. No default-provider field — see MCO-A4.
 - Service-local records: `GitStatus`/`GitChange` (`Services/GitService.cs`), `DiscoveredRepo`
   (`Services/ProjectDiscovery.cs`), `PaletteColor` (`Services/ColorPalette.cs`),
   `DatabaseBackupResult`/`BackupTarget` (`Services/SqlBackupService.cs`).
 
 ### 4.3 Key services — VERBS (`MindAttic.Launcher/Services/`)
 - **SettingsStore** — load/save `AppSettings` via Vault; one-time legacy-file seed.
-- **AgentProviderRegistry** — resolve / cycle providers; per-project override vs workspace default.
+- **AgentProviderRegistry** — resolve the configured/default provider list (`All()`, `ByKey()`,
+  `Current()` = first-listed provider); per-launch provider choice is a menu-layer concern, not
+  state this service persists.
 - **GitService** — `git status --porcelain` snapshot, short summary, auto commit message.
 - **WindowsTerminalLauncher** — build + invoke `wt` tab command lines (title/color/scheme).
 - **WindowsTerminalSchemes** — idempotent splice of a `MindAttic-<Name>` scheme into WT settings.
@@ -148,7 +152,7 @@ Evidence (2026-06-07, `net10.0-windows`):
 - **Build:** `dotnet build` succeeds (`TreatWarningsAsErrors=true`, `Nullable=enable`).
 - **Tests:** `dotnet test` → **118 passed, 0 failed, 0 skipped** (NUnit 4), ~263 ms.
 - Coverage spans: settings/Vault round-trip + legacy seed + unknown-key preservation
-  (`SettingsStoreTests`); provider resolution + cycling (`AgentProviderRegistryTests`); `git
+  (`SettingsStoreTests`); provider list resolution + model-flag rewriting (`AgentProviderRegistryTests`); `git
   --porcelain` parsing incl. renames/untracked/both-modified + auto message
   (`GitServiceTests`); the dated-backup-folder allocator + exclude lists (`BackupServiceTests`);
   SQL backup path/SQL composition (`SqlBackupServiceTests`); WT scheme splice idempotency
@@ -164,7 +168,7 @@ Evidence (2026-06-07, `net10.0-windows`):
 - No open RFCs at this time — see [`docs/rfc/`](rfc/) (template at `rfc/0001-example.md`).
 - Backlog and partial/planned capabilities live in [USER_STORIES.md](USER_STORIES.md) under
   **Priority backlog**. The headline goal is a frictionless single-binary workspace orchestrator;
-  the menus exercised only interactively (Backup/Run/Open/Provider/Pull/Overlord wiring) are the
+  the menus exercised only interactively (Backup/Run/Open/Pull/Overlord wiring) are the
   least test-covered surface and the next place to add coverage.
 
 ## 8. Quality bar {#MCO-§8}

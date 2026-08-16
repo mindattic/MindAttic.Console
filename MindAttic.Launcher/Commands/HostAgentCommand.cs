@@ -88,9 +88,11 @@ public sealed class HostAgentCommand : Command<HostAgentCommand.Settings>
         }
         else
         {
-            // No project to read a per-project default from in --path mode —
-            // fall back to the workspace default provider.
-            provider = project is not null ? registry.EffectiveProvider(project) : registry.Current();
+            // No explicit --provider: there's no per-project override anymore
+            // (that's now an ephemeral, menu-time choice — see OpenProjectMenu),
+            // so a direct/scripted `host` call always resolves to the
+            // first-listed provider (Claude, per AgentProviderRegistry.Defaults).
+            provider = registry.Current();
         }
 
         var title = !string.IsNullOrWhiteSpace(settings.Title) ? settings.Title!
@@ -126,6 +128,11 @@ public sealed class HostAgentCommand : Command<HostAgentCommand.Settings>
         // root opens with the order ready to send.
         if (!string.IsNullOrWhiteSpace(settings.Prompt))
             psi.ArgumentList.Add(settings.Prompt!);
+
+        // Push this provider's API key (if Vault has one) to wherever its CLI
+        // expects it — an env var for Gemini, config.toml for Kimi. A missing
+        // Vault entry is a no-op; the CLI falls back to its own configured auth.
+        ProviderCredentials.Apply(psi, provider.Key);
 
         try
         {

@@ -25,7 +25,7 @@ public sealed class MainMenuCommand : AsyncCommand<MainMenuCommand.Settings>
         var pull     = new PullMenu(store, git);
         var open     = new OpenProjectMenu(store, providers, wt);
         var backup   = new BackupMenu(new BackupService(), store, new SqlBackupService());
-        var settingsMenu = new SettingsMenu(store, providers);
+        var settingsMenu = new SettingsMenu(providers);
 
         // Checked once at launch: running git every menu redraw would be wasteful,
         // and the build can't change underneath a running process anyway.
@@ -41,9 +41,9 @@ public sealed class MainMenuCommand : AsyncCommand<MainMenuCommand.Settings>
         {
             new() { Name = "Commit and sync",               Description = "commit and push changes per project or across all", Tag = "commit" },
             new() { Name = "Pull",                          Description = "git pull --ff-only per project or across all", Tag = "pull" },
-            new() { Name = "Open Project Tab",              Description = "select a project to open with its configured coding agent", Tag = "open" },
+            new() { Name = "Open Project Tab",              Description = "select a project, then pick which agent CLI to open it with", Tag = "open" },
             new() { Name = "Backup",                        Description = "back up MindAttic to R:\\Backup\\MindAttic", Tag = "backup" },
-            new() { Name = "Settings",                      Description = "CLI development: default agent, model per agent, per-project overrides", Tag = "settings" },
+            new() { Name = "Settings",                      Description = "CLI development: the model each agent CLI runs with", Tag = "settings" },
             new() { Name = "Status",                        Description = "open a Claude tab at the workspace root with /status pre-filled", Tag = "status" },
             new() { Name = "Open Command Prompt (Admin)",   Description = "open cmd as Administrator at the workspace root", Tag = "cmd" },
             new() { Name = "Open PowerShell (Admin)",       Description = "open PowerShell as Administrator at the workspace root", Tag = "ps" },

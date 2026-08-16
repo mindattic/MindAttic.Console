@@ -43,10 +43,9 @@ public sealed class SettingsStoreTests
     {
         var input = new AppSettings
         {
-            Provider = "Claude",
             Projects =
             {
-                new Project { Name = "Alpha", Path = @"C:\a", Provider = "Claude" },
+                new Project { Name = "Alpha", Path = @"C:\a" },
                 new Project { Name = "Beta",  Path = @"C:\b" }
             }
         };
@@ -54,7 +53,6 @@ public sealed class SettingsStoreTests
         subject.Save(input);
         var roundTripped = subject.Load();
 
-        Assert.That(roundTripped.Provider, Is.EqualTo("Claude"));
         Assert.That(roundTripped.Projects, Has.Count.EqualTo(2));
         Assert.That(roundTripped.Projects[0].Name, Is.EqualTo("Alpha"));
     }
@@ -112,7 +110,6 @@ public sealed class SettingsStoreTests
 
         var loaded = seeded.Load();
 
-        Assert.That(loaded.Provider, Is.EqualTo("Claude"));
         Assert.That(loaded.Projects, Has.Count.EqualTo(1));
         Assert.That(loaded.AgentProviders, Has.Count.EqualTo(1));
     }

@@ -12,6 +12,17 @@ updated: 2026-06-19
 > Append only. Never rewrite an amendment — supersede it with a new one. Beyond ~25, fold into
 > [BIBLE.md](BIBLE.md) and start a new epoch (note the git tag).
 
+## MCO-A4 — Provider is an ephemeral per-launch choice, not persisted config (supersedes —)
+Removed the entire "saved provider" surface: `Project.Provider`, `AppSettings.Provider`,
+`AgentProviderRegistry.EffectiveProvider`/`EffectiveProviderKey`/`Next`/`SetDefault`/
+`SetProjectProvider`, the `P` cycle-hotkey in `OpenProjectMenu`, the "Provider" row in
+`ProjectSetupMenu`, and the "Default Agent" + per-project rows in `SettingsMenu`. In their place,
+`OpenProjectMenu` now prompts for which agent CLI to launch with (Claude, Codex, Gemini, Kimi — see
+`AgentProviderRegistry.Defaults` order) immediately after a project is picked; the choice is used for
+that one launch only and nothing is written to settings. Callers with no launch-time choice to make
+(Overlord, Status, a bare `mindattic host` with no `--provider`) now always resolve to the
+first-listed provider via `AgentProviderRegistry.Current()`.
+
 ## MCO-A3 — Project renamed from MindAttic.Console to MindAttic.Launcher (supersedes —)
 The GitHub repo, solution, project folders, assembly name, exe output, all C# namespaces, settings
 bucket (`AppBucket`), and every doc reference have been renamed from `MindAttic.Console` to

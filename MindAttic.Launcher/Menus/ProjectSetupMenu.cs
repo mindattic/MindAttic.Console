@@ -5,7 +5,7 @@ using Spectre.Console;
 
 namespace MindAttic.Launcher.Menus;
 
-public sealed class ProjectSetupMenu(SettingsStore store, AgentProviderRegistry providers, string projectName)
+public sealed class ProjectSetupMenu(SettingsStore store, string projectName)
 {
     public void Run()
     {
@@ -16,17 +16,8 @@ public sealed class ProjectSetupMenu(SettingsStore store, AgentProviderRegistry 
             var project = ProjectRoster.FindByName(settings, projectName);
             if (project is null) return;
 
-            var effectiveKey = providers.EffectiveProviderKey(project);
             var items = new List<MenuItem>
             {
-                new()
-                {
-                    Name = "Provider",
-                    Description = string.IsNullOrWhiteSpace(project.Provider)
-                        ? $"default: {effectiveKey}"
-                        : effectiveKey,
-                    Tag = "provider"
-                },
                 new()
                 {
                     Name = "Alias",
@@ -61,7 +52,6 @@ public sealed class ProjectSetupMenu(SettingsStore store, AgentProviderRegistry 
 
             switch (sel.Tag)
             {
-                case "provider": PickProvider(project); break;
                 case "alias":    EditField(project, "Alias",        p => p.TabAlias,    (p, v) => p.TabAlias    = v); break;
                 case "desc":     EditField(project, "Description",  p => p.Description, (p, v) => p.Description = v); break;
                 case "scheme":   EditField(project, "Color Scheme", p => p.ColorScheme, (p, v) => p.ColorScheme = v); break;
@@ -92,51 +82,6 @@ public sealed class ProjectSetupMenu(SettingsStore store, AgentProviderRegistry 
         });
 
         Screen.Notice($"[green]{Markup.Escape(label)} saved.[/]");
-        Thread.Sleep(600);
-    }
-
-    private void PickProvider(Project project)
-    {
-        var defaultProvider = providers.Current();
-        var projectKey = string.IsNullOrWhiteSpace(project.Provider) ? null : project.Provider;
-
-        var items = new List<MenuItem>
-        {
-            new()
-            {
-                Name = "Use Default",
-                Description = projectKey is null
-                    ? $"current - use default: {defaultProvider.Name}"
-                    : $"use default: {defaultProvider.Name}",
-                Tag = "default"
-            }
-        };
-        foreach (var p in providers.All())
-        {
-            items.Add(new MenuItem
-            {
-                Name = p.Name,
-                Description = string.Equals(p.Key, projectKey, StringComparison.OrdinalIgnoreCase)
-                    ? $"current - {p.RunCommand}"
-                    : p.RunCommand,
-                Tag = p
-            });
-        }
-
-        Screen.Header(projectName, "Setup", "Provider");
-        var sel = Menu.Prompt($"Pick an agent for {Markup.Escape(projectName)}:", items);
-        if (sel is null) return;
-
-        if (sel.Tag is AgentProvider chosen)
-        {
-            providers.SetProjectProvider(projectName, chosen.Key);
-            Screen.Notice($"[green]{Markup.Escape(projectName)} agent set to[/] [cyan1]{Markup.Escape(chosen.Name)}[/]");
-        }
-        else
-        {
-            providers.SetProjectProvider(projectName, null);
-            Screen.Notice($"[green]{Markup.Escape(projectName)} reset to default agent.[/]");
-        }
         Thread.Sleep(600);
     }
 }
