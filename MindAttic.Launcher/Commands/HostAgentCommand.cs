@@ -113,7 +113,10 @@ public sealed class HostAgentCommand : Command<HostAgentCommand.Settings>
         // landing during agent startup isn't missed.
         using var inputPipe = new HostInputPipeServer(provider.Key);
 
-        var psi = new ProcessStartInfo(parts[0])
+        // Bare npm-shim names (codex, gemini, ...) have no .exe on PATH, and
+        // CreateProcessW (what Process.Start uses below) doesn't walk PATHEXT
+        // the way cmd.exe does — so resolve to the actual .cmd/.bat shim first.
+        var psi = new ProcessStartInfo(ExecutableResolver.Resolve(parts[0]))
         {
             UseShellExecute = false,
             // Working directory matches the wt tab so the agent starts in the
