@@ -1,4 +1,4 @@
-bin/
+﻿bin/
 obj/
 artifacts/
 *.user
@@ -7,4 +7,4 @@ artifacts/
 *.suo
 TestResults/
 *.log
-.claude/checkpoint.md
+.claude/quicksave.md
