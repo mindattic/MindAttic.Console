@@ -8,7 +8,7 @@ namespace MindAttic.Launcher.Tests;
 [TestFixture]
 public sealed class WindowsTerminalLauncherTests
 {
-    private static readonly Project Project = new() { Name = "Overlord", Path = @"D:\Projects\MindAttic" };
+    private static readonly Project Project = new() { Name = "Workspace", Path = @"D:\Projects\MindAttic" };
     private static readonly AgentProvider Provider = new() { Key = "Claude", Name = "Claude Code", RunCommand = "claude" };
 
     [Test]
@@ -37,10 +37,10 @@ public sealed class WindowsTerminalLauncherTests
     public void BuildAgentTabAtPath_hosts_by_path_not_name()
     {
         var tab = new WindowsTerminalLauncher()
-            .BuildAgentTabAtPath("Overlord [Claude]", @"D:\Projects\MindAttic", Provider, "mindattic.exe");
+            .BuildAgentTabAtPath("Status [Claude]", @"D:\Projects\MindAttic", Provider, "mindattic.exe");
 
         // Path mode roots the host at a directory with no roster entry — it must
-        // pass --path (never --name, which is what made the old Overlord tab die).
+        // pass --path (never --name).
         Assert.That(tab.Command, Does.Contain("--path"));
         Assert.That(tab.Command, Does.Not.Contain("--name"));
         var pathIdx = tab.Command.ToList().IndexOf("--path");
@@ -52,7 +52,7 @@ public sealed class WindowsTerminalLauncherTests
     public void BuildAgentTabAtPath_appends_prompt_as_last_host_arg_when_provided()
     {
         var tab = new WindowsTerminalLauncher()
-            .BuildAgentTabAtPath("Overlord [Claude]", @"D:\Projects\MindAttic", Provider, "mindattic.exe",
+            .BuildAgentTabAtPath("Status [Claude]", @"D:\Projects\MindAttic", Provider, "mindattic.exe",
                 prompt: "tidy every repo");
 
         Assert.That(tab.Command[^2], Is.EqualTo("--prompt"));
@@ -63,9 +63,9 @@ public sealed class WindowsTerminalLauncherTests
     public void BuildAgentTabAtPath_omits_prompt_when_null_or_blank()
     {
         var none  = new WindowsTerminalLauncher()
-            .BuildAgentTabAtPath("Overlord", @"D:\Projects\MindAttic", Provider, "mindattic.exe");
+            .BuildAgentTabAtPath("Status", @"D:\Projects\MindAttic", Provider, "mindattic.exe");
         var blank = new WindowsTerminalLauncher()
-            .BuildAgentTabAtPath("Overlord", @"D:\Projects\MindAttic", Provider, "mindattic.exe", prompt: "  ");
+            .BuildAgentTabAtPath("Status", @"D:\Projects\MindAttic", Provider, "mindattic.exe", prompt: "  ");
 
         Assert.That(none.Command, Does.Not.Contain("--prompt"));
         Assert.That(blank.Command, Does.Not.Contain("--prompt"));

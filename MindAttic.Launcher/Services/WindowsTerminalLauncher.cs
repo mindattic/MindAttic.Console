@@ -77,8 +77,7 @@ public sealed class WindowsTerminalLauncher
     /// <summary>
     /// Builds an "agent host" tab — invokes `mindattic host …` for the given
     /// project + provider. When <paramref name="prompt"/> is set it's passed
-    /// through as <c>--prompt</c> so the agent opens with that text pre-loaded
-    /// (used by Overlord to seed its workspace-root session with the order).
+    /// through as <c>--prompt</c> so the agent opens with that text pre-loaded.
     /// </summary>
     public Tab BuildAgentTab(Project project, AgentProvider provider, string hostExePath, string? prompt = null)
     {
@@ -112,11 +111,10 @@ public sealed class WindowsTerminalLauncher
 
     /// <summary>
     /// Builds an "agent host" tab rooted at an arbitrary directory rather than a
-    /// registered project — invokes `mindattic host --path …`. Overlord uses this
-    /// to open one agent over the whole MindAttic workspace, so a single session
-    /// can answer questions about and give directions to every repo under it. When
-    /// <paramref name="prompt"/> is set it's forwarded as <c>--prompt</c> so the
-    /// session opens with that order pre-loaded.
+    /// registered project — invokes `mindattic host --path …` (e.g. the Status
+    /// tab, rooted at the whole MindAttic workspace). When <paramref name="prompt"/>
+    /// is set it's forwarded as <c>--prompt</c> so the session opens with that
+    /// text pre-loaded.
     /// </summary>
     public Tab BuildAgentTabAtPath(
         string title, string workingDirectory, AgentProvider provider, string hostExePath,

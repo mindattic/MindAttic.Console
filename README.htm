@@ -8,7 +8,7 @@
 MindAttic workspace — every sibling repo under D:\Projects\MindAttic. It is one interactive
 Spectre.Console(https://spectrecons...">
 <meta name="generator" content="MindAttic Codex build-readme.ps1">
-<meta name="generated" content="2026-08-14">
+<meta name="generated" content="2026-08-25">
 <style>:root{
   --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;
   --border:#30363d;
@@ -134,7 +134,7 @@ pre:hover .cpbtn{opacity:1}
 </ul>
 <h2 id="what-it-is-what-its-for">What it is / what it's for</h2>
 <p>Pick a project, then pick an agent CLI — a working Claude/Codex/Gemini/Kimi session opens in a titled, colored Windows Terminal tab rooted at the right repo. One menu (or <code>mindattic commit</code>) commits and pushes one project or every project, auto-generating a message when you give none. A real backup runs a <code>robocopy</code> snapshot of the workspace <em>and</em> full <code>sqlcmd BACKUP DATABASE</code> dumps of every project's SQL Server databases, into a collision-safe dated folder. Newly created repos under the workspace root are discovered and offered for the roster automatically, with a matching Windows Terminal color scheme spliced in. Settings round-trip losslessly through <a href="https://mindattic.com/mindatticvault.htm">MindAttic.Vault</a> — this app never has to know about every key another MindAttic tool writes to the same settings file to preserve them.</p>
-<p>It is <strong>not</strong> an agent: it execs a provider CLI with inherited stdio and never calls an LLM SDK or makes an LLM API call directly (the one narrow exception — an Overlord draft passed through <code>claude -p</code> as a prompt-refining subprocess — is orchestration, not an SDK call; see <a href="docs/AMENDMENTS.md">MCO-A2</a>).</p>
+<p>It is <strong>not</strong> an agent: it execs a provider CLI with inherited stdio and never calls an LLM SDK or makes an LLM API call directly.</p>
 <h2 id="architecture-overview">Architecture overview</h2>
 <p><code>Program.cs</code> wires a <code>Spectre.Console.Cli</code> <code>CommandApp&lt;MainMenuCommand&gt;</code> with two named sub-commands (<code>host</code>, <code>commit</code>) plus <code>version</code>/<code>--version</code>. Running the exe with no arguments (or via <code>MainMenuCommand</code>, the app's default) drives the interactive menu; every named sub-command is a scriptable front door onto <strong>the same services</strong> — there is no separate code path for "menu mode" vs. "CLI mode" (HOUSE-LAW-6, "one engine, many front doors").</p>
 <pre><code>                         args
@@ -171,7 +171,7 @@ pre:hover .cpbtn{opacity:1}
 </tr>
 <tr>
 <td><code>host</code></td>
-<td><code>--name &lt;NAME&gt;</code> — project name from settings (optional if <code>--path</code> given)&lt;br&gt;<code>--path &lt;PATH&gt;</code> — root the agent at an arbitrary directory instead of a registered project; <strong>takes precedence over <code>--name</code></strong> (this is how Overlord roots one session at the workspace root)&lt;br&gt;<code>--title &lt;TITLE&gt;</code> — tab title (defaults to <code>--name</code>, or the directory's leaf name)&lt;br&gt;<code>--provider &lt;PROVIDER&gt;</code> — provider key (<code>Claude</code>/<code>Codex</code>/<code>Gemini</code>/<code>Kimi</code> by default); omit to resolve to the first-listed provider&lt;br&gt;<code>--prompt &lt;PROMPT&gt;</code> — seeds the agent's first turn (pre-fills input; does not auto-submit)</td>
+<td><code>--name &lt;NAME&gt;</code> — project name from settings (optional if <code>--path</code> given)&lt;br&gt;<code>--path &lt;PATH&gt;</code> — root the agent at an arbitrary directory instead of a registered project; <strong>takes precedence over <code>--name</code></strong> (this is how the Status menu item roots a session at the workspace root)&lt;br&gt;<code>--title &lt;TITLE&gt;</code> — tab title (defaults to <code>--name</code>, or the directory's leaf name)&lt;br&gt;<code>--provider &lt;PROVIDER&gt;</code> — provider key (<code>Claude</code>/<code>Codex</code>/<code>Gemini</code>/<code>Kimi</code> by default); omit to resolve to the first-listed provider&lt;br&gt;<code>--prompt &lt;PROMPT&gt;</code> — seeds the agent's first turn (pre-fills input; does not auto-submit)</td>
 <td>Splits the resolved provider's <code>RunCommand</code> into argv (<code>CommandLineParser.Split</code>), pushes any Vault-stored credential for that provider (env var for Gemini, <code>config.toml</code> splice for Kimi — see <a href="#agent-providers--host-tabs">ProviderCredentials</a>), starts <code>TitlePinner</code> (busy/idle tab-title watchdog) and <code>HostInputPipeServer</code> (per-tab named pipe for remote-control injection), then <code>Process.Start</code>s the provider exe with inherited stdio and waits for exit.</td>
 <td><code>0</code> provider ran and exited cleanly (its own exit code is passed through)&lt;br&gt;<code>1</code> unknown <code>--name</code>&lt;br&gt;<code>2</code> provider resolved but its <code>RunCommand</code> is empty&lt;br&gt;<code>3</code> provider process failed to start (exception)&lt;br&gt;<code>4</code> explicit <code>--provider</code> key doesn't resolve to a configured provider&lt;br&gt;<code>64</code> neither <code>--name</code> nor <code>--path</code> given</td>
 </tr>
@@ -212,7 +212,7 @@ pre:hover .cpbtn{opacity:1}
 <tr>
 <td>Open Project Tab</td>
 <td><code>open</code></td>
-<td>Opens <code>OpenProjectMenu</code>: pick a project (or <strong>Overlord</strong>), then pick which agent CLI to launch it with, then <code>ProjectActionMenu</code>.</td>
+<td>Opens <code>OpenProjectMenu</code>: pick a project, then pick which agent CLI to launch it with, then <code>ProjectActionMenu</code>.</td>
 </tr>
 <tr>
 <td>Backup</td>
@@ -252,9 +252,8 @@ pre:hover .cpbtn{opacity:1}
 </tbody></table>
 <p>The header also shows a staleness notice (when the running build is behind the latest commit) and the Claude usage/rate-limit block; neither is a menu item.</p>
 <h3 id="open-project-tab-provider-picker-project-action-menu">Open Project Tab → provider picker → Project Action Menu</h3>
-<p><code>OpenProjectMenu</code> lists <strong>Overlord</strong> first, then every roster project sorted by name.</p>
+<p><code>OpenProjectMenu</code> lists every roster project sorted by name.</p>
 <ul>
-<li><strong>Overlord</strong> — hands off to <code>OverlordMenu</code>: opens <strong>one</strong> agent session rooted at the whole MindAttic workspace (<code>OverlordMenu.ResolveMindAtticRoot()</code>, found by walking up from the exe   looking for <code>scripts/publish.ps1</code>, falling back to <code>D:\Projects\MindAttic</code>). Optionally collects a   multi-line order (blank line commits it), offers to refine it through a <code>claude -p</code> subprocess   call (a precision-prompt-engineer system prompt; 60s timeout; falls back to the raw draft on any   failure), then opens the tab with the (possibly refined) order pre-filled as the first prompt —   the CLI does not auto-submit it.</li>
 <li><strong>A project</strong> — prompts "Open <code>&lt;Project&gt;</code> with which agent?" over every configured provider (Claude, Codex, Gemini, Kimi by default, in that order — <strong>this choice is never persisted</strong>, see   <a href="docs/AMENDMENTS.md">MCO-A4</a>), then opens <code>ProjectActionMenu</code> for that project + provider pair:</li>
 </ul>
 <table><thead><tr>
@@ -351,14 +350,14 @@ pre:hover .cpbtn{opacity:1}
 <td><code>kimi --yolo</code></td>
 </tr>
 </tbody></table>
-<p><code>AgentProviderRegistry.Current()</code> (the first-listed provider — Claude, by ordering) is what any launch path with no explicit choice resolves to: a bare <code>mindattic host</code> with no <code>--provider</code>, Overlord, and the Status menu item. Opening a project tab from the menu always prompts fresh instead (see <a href="#open-project-tab--provider-picker--project-action-menu">Open Project Tab</a>); the pick is never saved.</p>
+<p><code>AgentProviderRegistry.Current()</code> (the first-listed provider — Claude, by ordering) is what any launch path with no explicit choice resolves to: a bare <code>mindattic host</code> with no <code>--provider</code>, and the Status menu item. Opening a project tab from the menu always prompts fresh instead (see <a href="#open-project-tab--provider-picker--project-action-menu">Open Project Tab</a>); the pick is never saved.</p>
 <p><strong>Credential injection</strong> (<code>Services/ProviderCredentials.cs</code>) runs right before <code>HostAgentCommand</code> execs the provider: it resolves a per-provider API key from the shared MindAttic LLM credential keyring (<code>MindAttic.Vault.Credentials.LlmCredentialStore</code>, per <a href="../MindAttic.HouseRules.md#HOUSE-LAW-3">HOUSE-LAW-3</a>) and pushes it wherever that CLI expects to find it —</p>
 <ul>
 <li><strong>Gemini</strong> reads its key from the <code>GEMINI_API_KEY</code> environment variable, so <code>ProviderCredentials</code> sets it directly on the child process's environment.</li>
 <li><strong>Kimi</strong> only reads its own <code>~/.kimi-code/config.toml</code>, so <code>Services/KimiConfigSync.cs</code> performs a targeted text splice: it locates <code>[providers."managed:kimi-code"]</code> and rewrites just its   <code>api_key = "…"</code> line, leaving every other table/model/comment in the user's file untouched   (idempotent — a no-op if the value already matches). It refuses to write when that provider   already has an <code>.oauth</code> sub-table, since Kimi rejects a provider with both <code>api_key</code> and <code>oauth</code>   set.</li>
 <li>Any other provider (or a missing/blank Vault entry) is a no-op — the CLI falls back to however it's already configured (its own login flow, an existing config key, etc.). This is never a hard   failure.</li>
 </ul>
-<p><strong>Host tabs.</strong> Every agent session is a Windows Terminal tab running <code>MindAttic.Launcher.exe host --name &lt;Project&gt; --provider &lt;Key&gt; --title "&lt;Title&gt; [&lt;Key&gt;]"</code> (or <code>--path &lt;dir&gt;</code> for Overlord/Status), built by <code>WindowsTerminalLauncher.BuildAgentTab</code> / <code>BuildAgentTabAtPath</code> and opened with <code>--tabColor</code>/<code>--colorScheme</code> from the project. Inside that process, two background loops run for the tab's lifetime:</p>
+<p><strong>Host tabs.</strong> Every agent session is a Windows Terminal tab running <code>MindAttic.Launcher.exe host --name &lt;Project&gt; --provider &lt;Key&gt; --title "&lt;Title&gt; [&lt;Key&gt;]"</code> (or <code>--path &lt;dir&gt;</code> for Status), built by <code>WindowsTerminalLauncher.BuildAgentTab</code> / <code>BuildAgentTabAtPath</code> and opened with <code>--tabColor</code>/<code>--colorScheme</code> from the project. Inside that process, two background loops run for the tab's lifetime:</p>
 <ul>
 <li><strong><code>TitlePinner</code></strong> polls the console's bottom rows every 250ms (<code>ConsoleBuffer.ReadBottomRows</code>) looking for a busy signature ("esc to interrupt", "ctrl+c to cancel", or Claude Code's "N   shell(s)" background-job footer) and reasserts the tab title as <code>▶  &lt;title&gt;</code> (busy) or   <code>⏸  &lt;title&gt;</code> (idle) whenever the CLI's own OSC title write has clobbered it — Windows Terminal   exposes no API for the launcher process to set another tab's title from outside, so the watchdog   has to live inside the hosted process. This requires the tab be opened <em>without</em>   <code>--suppressApplicationTitle</code> (<code>BuildAgentTab</code> sets <code>SuppressApplicationTitle = false</code>).</li>
 <li><strong><code>HostInputPipeServer</code></strong> listens on a per-tab named pipe (<code>mindattic-host-{provider}-{pid}</code>, single-instance) and injects any text it receives into the console's input buffer via   <code>ConsoleInputInjector</code> — the delivery mechanism for <a href="#remote-control">Remote control</a>.</li>
@@ -385,7 +384,7 @@ pre:hover .cpbtn{opacity:1}
 <h2 id="sibling-repos-what-this-repo-does-not-do">Sibling repos &amp; what this repo does NOT do</h2>
 <p>MindAttic.Launcher is the orchestrator, not the thing being orchestrated. Concretely, it is <strong>NOT</strong>:</p>
 <ul>
-<li><strong>An agent.</strong> It execs a provider CLI with inherited stdio (<code>mindattic host</code>); no code path here links an LLM SDK or makes an LLM API call. The one documented exception is Overlord's optional   <code>claude -p</code> prompt-refinement subprocess call, which is orchestration of an external tool, not an   SDK integration (<a href="docs/AMENDMENTS.md">MCO-A2</a>).</li>
+<li><strong>An agent.</strong> It execs a provider CLI with inherited stdio (<code>mindattic host</code>); no code path here links an LLM SDK or makes an LLM API call.</li>
 <li><strong>A phone/iPad web terminal.</strong> That was <code>MindAttic.Mobile</code> (a WebSocket + xterm.js bridge); it has been removed from the workspace. Remote driving of a tab is Claude Code's own <code>/remote-control</code>.</li>
 <li><strong>A deploy engine.</strong> Landing-page and per-project deploys are <strong>MindAttic.Deploy</strong>'s job (<code>MindAttic.Deploy.exe all</code>, or the <code>/deploy</code> slash command in this repo, which shells out to it).   This repo owns no FTP pipeline.</li>
 <li><strong>A general settings UI.</strong> It edits only its own roster/provider settings and the Windows Terminal <code>schemes</code> array (an idempotent splice) — it is not a Windows Terminal settings editor.</li>
@@ -451,11 +450,7 @@ NuGet.config, global.json             package source + SDK pin</code></pre>
 </tr>
 <tr>
 <td><strong>Host / host tab</strong></td>
-<td>A <code>wt</code> tab running <code>mindattic host</code>, which execs a provider with inherited stdio, rooted at a repo (or <code>--path</code> directory).</td>
-</tr>
-<tr>
-<td><strong>Overlord</strong></td>
-<td>One agent session rooted at the whole workspace root rather than a single repo.</td>
+<td>A <code>wt</code> tab running <code>mindattic host</code>, which execs a provider with inherited stdio, rooted at a repo (or <code>--path</code> directory, e.g. the Status tab).</td>
 </tr>
 <tr>
 <td><strong>Pinner</strong></td>
@@ -481,7 +476,7 @@ NuGet.config, global.json             package source + SDK pin</code></pre>
 <hr>
 <p>See <a href="docs/BIBLE.md">docs/BIBLE.md</a> for the architecture canon and the Laws, <a href="docs/AMENDMENTS.md">docs/AMENDMENTS.md</a> for what has changed since, and <a href="docs/USER<em>STORIES.md">docs/USER</em>STORIES.md</a> for the per-capability status and the test that verifies each one.</p>
 
-    <p class="codex-footer">Generated 2026-08-14 by the shared MindAttic Codex engine (<code>codex-standard/build-readme.ps1</code>) from <code>README.md</code>. Edit the Markdown source, not this file.</p>
+    <p class="codex-footer">Generated 2026-08-25 by the shared MindAttic Codex engine (<code>codex-standard/build-readme.ps1</code>) from <code>README.md</code>. Edit the Markdown source, not this file.</p>
   </main>
 </div>
 <script>(function(){

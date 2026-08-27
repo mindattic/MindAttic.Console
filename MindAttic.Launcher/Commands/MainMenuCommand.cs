@@ -82,7 +82,7 @@ public sealed class MainMenuCommand : AsyncCommand<MainMenuCommand.Settings>
                 case "settings": settingsMenu.Run(); break;
                 case "status":
                 {
-                    var statusRoot = Menus.OverlordMenu.ResolveMindAtticRoot();
+                    var statusRoot = ExePath.WorkspaceRoot;
                     if (!Directory.Exists(statusRoot)) statusRoot = MindAtticRoot();
                     var provider = providers.Current();
                     Screen.Working("Opening status tab…  Please wait.");
@@ -100,7 +100,7 @@ public sealed class MainMenuCommand : AsyncCommand<MainMenuCommand.Settings>
                     // every repo), matching "the root directory" in the hint —
                     // MindAtticRoot() is the Launcher *repo* (Deploy needs it that
                     // way), which is a subfolder, not the workspace.
-                    var adminRoot = Menus.OverlordMenu.ResolveMindAtticRoot();
+                    var adminRoot = ExePath.WorkspaceRoot;
                     if (!Directory.Exists(adminRoot)) adminRoot = MindAtticRoot();
                     var tab = result.Selected.Tag is "ps"
                         ? wt.BuildPowerShellTab(adminRoot)

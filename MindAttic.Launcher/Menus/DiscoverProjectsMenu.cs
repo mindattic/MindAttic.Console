@@ -24,7 +24,7 @@ public sealed class DiscoverProjectsMenu(SettingsStore store, GitService git, Wi
 
     public void Run()
     {
-        var root = OverlordMenu.ResolveMindAtticRoot();
+        var root = ExePath.WorkspaceRoot;
         if (!Directory.Exists(root)) return;
 
         var candidates = ProjectDiscovery.FindUnregistered(store.Load(), root);
@@ -43,7 +43,7 @@ public sealed class DiscoverProjectsMenu(SettingsStore store, GitService git, Wi
         catch (InvalidOperationException)
         {
             // stdin redirected (piped run / CI) — no interactive user to drive the
-            // prompts. Bail cleanly, exactly like OverlordMenu.Run.
+            // prompts. Bail cleanly.
         }
     }
 

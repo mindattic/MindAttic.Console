@@ -40,9 +40,7 @@ Windows Terminal color scheme spliced in. Settings round-trip losslessly through
 every key another MindAttic tool writes to the same settings file to preserve them.
 
 It is **not** an agent: it execs a provider CLI with inherited stdio and never calls an LLM SDK or
-makes an LLM API call directly (the one narrow exception — an Overlord draft passed through
-`claude -p` as a prompt-refining subprocess — is orchestration, not an SDK call; see
-[MCO-A2](docs/AMENDMENTS.md)).
+makes an LLM API call directly.
 
 ## Architecture overview
 
@@ -86,7 +84,7 @@ All sub-commands are declared in `MindAttic.Launcher/Program.cs` and implemented
 | Command | Flags | Behavior | Exit codes |
 |---|---|---|---|
 | *(none)* | — | Runs `MainMenuCommand` — the interactive Spectre.Console menu. | `0` |
-| `host` | `--name <NAME>` — project name from settings (optional if `--path` given)<br>`--path <PATH>` — root the agent at an arbitrary directory instead of a registered project; **takes precedence over `--name`** (this is how Overlord roots one session at the workspace root)<br>`--title <TITLE>` — tab title (defaults to `--name`, or the directory's leaf name)<br>`--provider <PROVIDER>` — provider key (`Claude`/`Codex`/`Gemini`/`Kimi` by default); omit to resolve to the first-listed provider<br>`--prompt <PROMPT>` — seeds the agent's first turn (pre-fills input; does not auto-submit) | Splits the resolved provider's `RunCommand` into argv (`CommandLineParser.Split`), pushes any Vault-stored credential for that provider (env var for Gemini, `config.toml` splice for Kimi — see [ProviderCredentials](#agent-providers--host-tabs)), starts `TitlePinner` (busy/idle tab-title watchdog) and `HostInputPipeServer` (per-tab named pipe for remote-control injection), then `Process.Start`s the provider exe with inherited stdio and waits for exit. | `0` provider ran and exited cleanly (its own exit code is passed through)<br>`1` unknown `--name`<br>`2` provider resolved but its `RunCommand` is empty<br>`3` provider process failed to start (exception)<br>`4` explicit `--provider` key doesn't resolve to a configured provider<br>`64` neither `--name` nor `--path` given |
+| `host` | `--name <NAME>` — project name from settings (optional if `--path` given)<br>`--path <PATH>` — root the agent at an arbitrary directory instead of a registered project; **takes precedence over `--name`** (this is how the Status menu item roots a session at the workspace root)<br>`--title <TITLE>` — tab title (defaults to `--name`, or the directory's leaf name)<br>`--provider <PROVIDER>` — provider key (`Claude`/`Codex`/`Gemini`/`Kimi` by default); omit to resolve to the first-listed provider<br>`--prompt <PROMPT>` — seeds the agent's first turn (pre-fills input; does not auto-submit) | Splits the resolved provider's `RunCommand` into argv (`CommandLineParser.Split`), pushes any Vault-stored credential for that provider (env var for Gemini, `config.toml` splice for Kimi — see [ProviderCredentials](#agent-providers--host-tabs)), starts `TitlePinner` (busy/idle tab-title watchdog) and `HostInputPipeServer` (per-tab named pipe for remote-control injection), then `Process.Start`s the provider exe with inherited stdio and waits for exit. | `0` provider ran and exited cleanly (its own exit code is passed through)<br>`1` unknown `--name`<br>`2` provider resolved but its `RunCommand` is empty<br>`3` provider process failed to start (exception)<br>`4` explicit `--provider` key doesn't resolve to a configured provider<br>`64` neither `--name` nor `--path` given |
 | `commit` | `-p\|--project <PROJECT>` — limit to one project (defaults to every roster project)<br>`-m\|--message <MESSAGE>` — commit message (defaults to an auto-generated summary of `git status --porcelain`) | For each target: reads git status, skips clean repos, auto-generates a message from added/modified/deleted/renamed files (capped to 200 chars, falling back to counts) when none is given, then `git add -A && git commit -m <msg> && git push --quiet`. | `0` every targeted project committed/pushed cleanly (or was already clean)<br>`1` at least one project had a missing path, an invalid git status, or a failed add/commit/push |
 | `version` (alias `--version`) | — | Prints the assembly's informational version and the running exe's process path. | `0` |
 
@@ -113,7 +111,7 @@ behind the latest commit in this repo) and renders a live Claude usage/rate-limi
 |---|---|---|
 | Commit and sync | `commit` | Opens `CommitMenu`: commit + push one project or all, prompting for an optional message (blank = auto-generated). |
 | Pull | `pull` | Opens `PullMenu`: `git pull --ff-only` one project or all. |
-| Open Project Tab | `open` | Opens `OpenProjectMenu`: pick a project (or **Overlord**), then pick which agent CLI to launch it with, then `ProjectActionMenu`. |
+| Open Project Tab | `open` | Opens `OpenProjectMenu`: pick a project, then pick which agent CLI to launch it with, then `ProjectActionMenu`. |
 | Backup | `backup` | Runs `BackupMenu` directly: confirms source/target/database list, then runs the file + SQL backup. |
 | Settings | `settings` | Opens `SettingsMenu`: the model each agent CLI runs with (only). |
 | Status | `status` | Opens a host tab at the resolved MindAttic workspace root using the first-listed provider, pre-filled with `/status`. |
@@ -127,15 +125,8 @@ the Claude usage/rate-limit block; neither is a menu item.
 
 ### Open Project Tab → provider picker → Project Action Menu
 
-`OpenProjectMenu` lists **Overlord** first, then every roster project sorted by name.
+`OpenProjectMenu` lists every roster project sorted by name.
 
-- **Overlord** — hands off to `OverlordMenu`: opens **one** agent session rooted at the whole
-  MindAttic workspace (`OverlordMenu.ResolveMindAtticRoot()`, found by walking up from the exe
-  looking for `scripts/publish.ps1`, falling back to `D:\Projects\MindAttic`). Optionally collects a
-  multi-line order (blank line commits it), offers to refine it through a `claude -p` subprocess
-  call (a precision-prompt-engineer system prompt; 60s timeout; falls back to the raw draft on any
-  failure), then opens the tab with the (possibly refined) order pre-filled as the first prompt —
-  the CLI does not auto-submit it.
 - **A project** — prompts "Open `<Project>` with which agent?" over every configured provider
   (Claude, Codex, Gemini, Kimi by default, in that order — **this choice is never persisted**, see
   [MCO-A4](docs/AMENDMENTS.md)), then opens `ProjectActionMenu` for that project + provider pair:
@@ -213,7 +204,7 @@ built-in providers, used whenever settings has none configured:
 
 `AgentProviderRegistry.Current()` (the first-listed provider — Claude, by ordering) is what any
 launch path with no explicit choice resolves to: a bare `mindattic host` with no `--provider`,
-Overlord, and the Status menu item. Opening a project tab from the menu always prompts fresh instead
+and the Status menu item. Opening a project tab from the menu always prompts fresh instead
 (see [Open Project Tab](#open-project-tab--provider-picker--project-action-menu)); the pick is
 never saved.
 
@@ -237,7 +228,7 @@ find it —
 
 **Host tabs.** Every agent session is a Windows Terminal tab running
 `MindAttic.Launcher.exe host --name <Project> --provider <Key> --title "<Title> [<Key>]"` (or
-`--path <dir>` for Overlord/Status), built by `WindowsTerminalLauncher.BuildAgentTab` /
+`--path <dir>` for Status), built by `WindowsTerminalLauncher.BuildAgentTab` /
 `BuildAgentTabAtPath` and opened with `--tabColor`/`--colorScheme` from the project. Inside that
 process, two background loops run for the tab's lifetime:
 
@@ -339,9 +330,7 @@ and will remain, MindAttic.Deploy's job.
 MindAttic.Launcher is the orchestrator, not the thing being orchestrated. Concretely, it is **NOT**:
 
 - **An agent.** It execs a provider CLI with inherited stdio (`mindattic host`); no code path here
-  links an LLM SDK or makes an LLM API call. The one documented exception is Overlord's optional
-  `claude -p` prompt-refinement subprocess call, which is orchestration of an external tool, not an
-  SDK integration ([MCO-A2](docs/AMENDMENTS.md)).
+  links an LLM SDK or makes an LLM API call.
 - **A phone/iPad web terminal.** That was `MindAttic.Mobile` (a WebSocket + xterm.js bridge); it has
   been removed from the workspace. Remote driving of a tab is Claude Code's own `/remote-control`.
 - **A deploy engine.** Landing-page and per-project deploys are **MindAttic.Deploy**'s job
@@ -429,8 +418,7 @@ NuGet.config, global.json             package source + SDK pin
 | **Workspace root** | `D:\Projects\MindAttic` — the parent directory holding every MindAttic repo. |
 | **Roster** | The `Projects` list in settings; the set of managed repos. |
 | **Provider** | A launchable agent CLI (`AgentProvider.RunCommand`) — e.g. Claude, Codex, Gemini, Kimi. |
-| **Host / host tab** | A `wt` tab running `mindattic host`, which execs a provider with inherited stdio, rooted at a repo (or `--path` directory). |
-| **Overlord** | One agent session rooted at the whole workspace root rather than a single repo. |
+| **Host / host tab** | A `wt` tab running `mindattic host`, which execs a provider with inherited stdio, rooted at a repo (or `--path` directory, e.g. the Status tab). |
 | **Pinner** | `TitlePinner` — the per-tab background loop that keeps a busy/idle glyph in the tab title. |
 | **Discovery** | The startup scan for git repos under the workspace root that aren't yet in the roster. |
 | **Vault** | MindAttic.Vault — the shared `%APPDATA%\MindAttic\…` settings/secret store this repo persists through. |

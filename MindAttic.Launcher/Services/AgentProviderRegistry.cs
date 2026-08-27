@@ -52,8 +52,8 @@ public sealed class AgentProviderRegistry(SettingsStore store)
     /// <summary>
     /// There is no persisted "default provider" anymore — the interactive menu
     /// asks fresh every time a project tab is opened (see OpenProjectMenu). This
-    /// is only for callers with no launch-time choice to make (Overlord, Status,
-    /// a bare `host` with no --provider) and always resolves to the
+    /// is only for callers with no launch-time choice to make (Status, a bare
+    /// `host` with no --provider) and always resolves to the
     /// first-listed provider (Claude, per <see cref="Defaults"/> order).
     /// </summary>
     public string CurrentDefaultKey() => All()[0].Key;

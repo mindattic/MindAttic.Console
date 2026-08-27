@@ -4,12 +4,12 @@ project: MindAttic.Launcher
 code: MCO
 layer: stories
 status: living
-updated: 2026-06-07
+updated: 2026-08-25
 ---
 
 # MindAttic.Launcher — User Stories
 > ✅ done (shipped & tested) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the test.
-> Personas: **Dev** (the developer running the workspace) and **Overlord** (one agent over all repos).
+> Personas: **Dev** (the developer running the workspace).
 
 ## Epic A — Launch agents in tabs
 - **MCO-US-A1 ✅** As a Dev, I can run `mindattic host --name <Project> [--provider <Key>]` to root
@@ -141,7 +141,7 @@ updated: 2026-06-07
 Dependency-ordered toward the headline goal (a frictionless single-binary workspace orchestrator):
 1. **MCO-US-A5** (🟡→✅) — make the menu-driven "Open Project Tab" flow testable (extract a pure tab
    spec from `OpenProjectMenu`) and verify it, closing the largest untested surface.
-2. ⬜ Integration smoke test for the interactive menus (Backup / Run / Provider / Pull / Overlord)
+2. ⬜ Integration smoke test for the interactive menus (Backup / Run / Provider / Pull)
    that today are exercised only by hand.
 3. ⬜ End-to-end `mindattic commit` exit-code assertions over a temp git repo.
 

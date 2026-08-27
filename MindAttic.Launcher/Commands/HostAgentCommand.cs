@@ -10,10 +10,10 @@ namespace MindAttic.Launcher.Commands;
 
 /// <summary>
 /// Per-tab agent host: resolves where to root the agent (a registered project by
-/// <c>--name</c>, or any directory by <c>--path</c> — the latter is how Overlord
-/// roots one session at the whole MindAttic workspace), splits the provider's
-/// RunCommand into argv, sets the tab title and starts the title-pinner, then
-/// execs the agent with inherited stdio.
+/// <c>--name</c>, or any directory by <c>--path</c> — the latter is how the
+/// Status tab roots a session at the MindAttic workspace root), splits the
+/// provider's RunCommand into argv, sets the tab title and starts the
+/// title-pinner, then execs the agent with inherited stdio.
 /// </summary>
 [SuppressMessage("Performance", "CA1812", Justification = "Instantiated by Spectre.Console.Cli")]
 public sealed class HostAgentCommand : Command<HostAgentCommand.Settings>
@@ -25,7 +25,7 @@ public sealed class HostAgentCommand : Command<HostAgentCommand.Settings>
         public string Name { get; init; } = "";
 
         [CommandOption("--path <PATH>")]
-        [Description("Root the agent at this directory instead of a registered project (Overlord uses the MindAttic workspace root). Takes precedence over --name.")]
+        [Description("Root the agent at this directory instead of a registered project (e.g. the Status tab uses the MindAttic workspace root). Takes precedence over --name.")]
         public string? Path { get; init; }
 
         [CommandOption("--title <TITLE>")]
@@ -37,7 +37,7 @@ public sealed class HostAgentCommand : Command<HostAgentCommand.Settings>
         public string? Provider { get; init; }
 
         [CommandOption("--prompt <PROMPT>")]
-        [Description("Seed the agent's first turn with this text (e.g. the Overlord order). Pre-fills the input; the CLI does not auto-submit.")]
+        [Description("Seed the agent's first turn with this text (e.g. /status). Pre-fills the input; the CLI does not auto-submit.")]
         public string? Prompt { get; init; }
     }
 
@@ -47,9 +47,9 @@ public sealed class HostAgentCommand : Command<HostAgentCommand.Settings>
         var registry = new AgentProviderRegistry(store);
 
         // Two ways to root the agent. --path wins: it hosts a session at an
-        // arbitrary directory with no roster entry, which is how Overlord opens
-        // one agent over the whole MindAttic workspace. Otherwise --name looks a
-        // registered project up the usual way.
+        // arbitrary directory with no roster entry (e.g. the Status tab, rooted
+        // at the whole MindAttic workspace). Otherwise --name looks a registered
+        // project up the usual way.
         Project? project = null;
         string workingDir;
         if (!string.IsNullOrWhiteSpace(settings.Path))
@@ -127,8 +127,7 @@ public sealed class HostAgentCommand : Command<HostAgentCommand.Settings>
         for (var i = 1; i < parts.Length; i++) psi.ArgumentList.Add(parts[i]);
         // A seed prompt is the agent's first positional arg — `claude <flags>
         // "<order>"` / `codex <flags> "<order>"`. Both start interactive with
-        // the prompt loaded; Overlord uses this so one session at the workspace
-        // root opens with the order ready to send.
+        // the prompt loaded; the Status tab uses this to pre-fill /status.
         if (!string.IsNullOrWhiteSpace(settings.Prompt))
             psi.ArgumentList.Add(settings.Prompt!);
 

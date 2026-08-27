@@ -33,6 +33,21 @@ public static class ExePath
     /// </summary>
     public static string? RepoRoot => FindRepoRoot();
 
+    /// <summary>
+    /// The directory under which every MindAttic project repo lives (e.g.
+    /// <c>D:\Projects\MindAttic</c>) — the parent of <see cref="RepoRoot"/>.
+    /// Falls back to the historical path when running outside a checkout.
+    /// </summary>
+    public static string WorkspaceRoot
+    {
+        get
+        {
+            var root = FindRepoRoot();
+            if (root is null) return @"D:\Projects\MindAttic";
+            return Path.GetDirectoryName(root) ?? root;
+        }
+    }
+
     public static void EnsureFresh()
     {
         var root = FindRepoRoot();

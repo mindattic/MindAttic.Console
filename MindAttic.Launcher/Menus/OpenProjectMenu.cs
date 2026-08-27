@@ -15,31 +15,20 @@ public sealed class OpenProjectMenu(SettingsStore store, AgentProviderRegistry p
             var settings = store.Load();
             var sortedProjects = ProjectRoster.Sorted(settings);
 
-            // Overlord rides at the top of the list: one agent session rooted
-            // at the MindAttic workspace, so a single order reaches every repo
-            // under it without opening a tab per project.
-            var items = new List<MenuItem>
-            {
-                new()
-                {
-                    Name = "Overlord",
-                    Description = "open one agent session over the whole MindAttic workspace",
-                    Tag = OverlordMenu.MenuTag
-                }
-            };
-            items.AddRange(sortedProjects.Select(p => new MenuItem
+            var items = sortedProjects.Select(p => new MenuItem
             {
                 Name = p.Name,
                 Description = p.Description ?? "",
                 Tag = p
-            }));
+            }).ToList();
 
             Screen.Header("Open Project Tab");
-            // Don't bail when the roster is empty — the Overlord row sits over the
-            // whole workspace and needs no registered project, so it must stay
-            // reachable here. Just note that nothing else is configured yet.
             if (sortedProjects.Count == 0)
-                Screen.Notice("[grey50]No projects configured yet — only the workspace-wide Overlord is available.[/]");
+            {
+                Screen.Notice("[grey50]No projects configured yet.[/]");
+                Screen.PressAnyKey();
+                return;
+            }
 
             var result = Menu.PromptWithKeys(
                 "Choose a project to open:",
@@ -53,12 +42,6 @@ public sealed class OpenProjectMenu(SettingsStore store, AgentProviderRegistry p
 
             if (result.Selected is { } sel)
             {
-                if (ReferenceEquals(sel.Tag, OverlordMenu.MenuTag))
-                {
-                    new OverlordMenu(providers, wt).Run();
-                    continue;
-                }
-
                 var project = (Project)sel.Tag!;
                 // Provider is an ephemeral, per-launch choice — nothing is
                 // persisted. Esc/Back from the picker just returns here.

@@ -11,7 +11,7 @@ updated: 2026-06-07
 
 ## Problem
 The pure services are well covered (118 green tests), but the interactive Spectre.Console menus
-(`OpenProjectMenu`, `BackupMenu`, `RunProjectMenu`, `SettingsMenu`, `PullMenu`, `OverlordMenu`) are
+(`OpenProjectMenu`, `BackupMenu`, `RunProjectMenu`, `SettingsMenu`, `PullMenu`) are
 exercised only by hand. The largest gap is "Open Project Tab" ([MCO-US-A5](../USER_STORIES.md)),
 where the `wt` tab spec is assembled inside the menu rather than in a pure seam.
 

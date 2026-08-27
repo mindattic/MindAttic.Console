@@ -4,7 +4,7 @@ project: MindAttic.Launcher
 code: MCO
 layer: bible
 status: living
-updated: 2026-06-19
+updated: 2026-08-25
 ---
 
 # MindAttic.Launcher — Project Bible
@@ -42,6 +42,9 @@ commit/push repos, and back the workspace up.
   `robocopy`, and `sqlcmd`.
 - NOT a general settings UI. It edits only its own roster/providers and the Windows Terminal
   `schemes` array (idempotent splice).
+- NOT hosting a workspace-wide "Overlord" agent session anymore. That feature (`OverlordMenu`, a
+  single agent rooted at the whole workspace with an optional LLM-refined opening order) never
+  worked reliably and was removed outright — see MCO-A5.
 
 ## 4. Architecture canon {#MCO-§4}
 A single-file, framework-dependent `win-x64` exe. Spectre.Console.Cli routes `args` to a default
@@ -168,7 +171,7 @@ Evidence (2026-06-07, `net10.0-windows`):
 - No open RFCs at this time — see [`docs/rfc/`](rfc/) (template at `rfc/0001-example.md`).
 - Backlog and partial/planned capabilities live in [USER_STORIES.md](USER_STORIES.md) under
   **Priority backlog**. The headline goal is a frictionless single-binary workspace orchestrator;
-  the menus exercised only interactively (Backup/Run/Open/Pull/Overlord wiring) are the
+  the menus exercised only interactively (Backup/Run/Open/Pull wiring) are the
   least test-covered surface and the next place to add coverage.
 
 ## 8. Quality bar {#MCO-§8}
@@ -186,8 +189,7 @@ A feature is done (`✅`) only when:
 - **Roster** — the `Projects` list in settings; the set of managed repos.
 - **Provider** — a launchable agent CLI (`AgentProvider.RunCommand`, e.g. `claude`, `codex`).
 - **Host / host tab** — a `wt` tab running `mindattic host`, which execs a provider with inherited
-  stdio rooted at a repo (or `--path` directory).
-- **Overlord** — one agent session rooted at the whole workspace root rather than a single repo.
+  stdio rooted at a repo (or `--path` directory, e.g. the Status tab).
 - **Pinner** — `TitlePinner`, the per-tab loop that keeps a busy/idle glyph in the tab title.
 - **Discovery** — startup scan for git repos under the root not yet in the roster.
 - **Vault** — MindAttic.Vault, the `%APPDATA%\MindAttic\...` settings/secret store.
