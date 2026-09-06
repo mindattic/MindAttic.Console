@@ -8,7 +8,7 @@ public sealed class AgentProviderRegistry(SettingsStore store)
     [
         new AgentProvider { Key = "Claude", Name = "Claude Code",  RunCommand = "claude --dangerously-skip-permissions --model claude-sonnet-5" },
         new AgentProvider { Key = "Codex",  Name = "OpenAI Codex", RunCommand = "codex --dangerously-bypass-approvals-and-sandbox" },
-        new AgentProvider { Key = "Gemini", Name = "Google Gemini", RunCommand = "gemini --yolo" },
+        new AgentProvider { Key = "Gemini", Name = "Google Antigravity", RunCommand = "agy --dangerously-skip-permissions" },
         new AgentProvider { Key = "Kimi",   Name = "Kimi Code",    RunCommand = "kimi --yolo" }
     ];
 

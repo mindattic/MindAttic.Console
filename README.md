@@ -199,7 +199,7 @@ built-in providers, used whenever settings has none configured:
 |---|---|---|
 | `Claude` | Claude Code | `claude --dangerously-skip-permissions --model claude-sonnet-5` |
 | `Codex` | OpenAI Codex | `codex --dangerously-bypass-approvals-and-sandbox` |
-| `Gemini` | Google Gemini | `gemini --yolo` |
+| `Gemini` | Google Antigravity | `agy --dangerously-skip-permissions` |
 | `Kimi` | Kimi Code | `kimi --yolo` |
 
 `AgentProviderRegistry.Current()` (the first-listed provider — Claude, by ordering) is what any
@@ -214,8 +214,9 @@ keyring (`MindAttic.Vault.Credentials.LlmCredentialStore`, per
 [HOUSE-LAW-3](../MindAttic.HouseRules.md#HOUSE-LAW-3)) and pushes it wherever that CLI expects to
 find it —
 
-- **Gemini** reads its key from the `GEMINI_API_KEY` environment variable, so `ProviderCredentials`
-  sets it directly on the child process's environment.
+- **Gemini** (`agy`, Google Antigravity CLI) normally authenticates via its own interactive
+  browser sign-in, but `ProviderCredentials` still sets `GEMINI_API_KEY` on the child process's
+  environment when the Vault keyring has an entry for it — a no-op otherwise.
 - **Kimi** only reads its own `~/.kimi-code/config.toml`, so `Services/KimiConfigSync.cs` performs a
   targeted text splice: it locates `[providers."managed:kimi-code"]` and rewrites just its
   `api_key = "…"` line, leaving every other table/model/comment in the user's file untouched
